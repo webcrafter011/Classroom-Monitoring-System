@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Timetable for {{ selected_date }}
+{% endblock %}
+
+{% block main %}
+<div class="container mt-4">
+    <h3>Timetable for {{ selected_date }}</h3>
+
+    <!-- Check if there are any lectures -->
+    {% if lectures %}
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Subject Name</th>
+                <th>Lecture Time</th>
+                <th>Teacher's Name</th>
+                <th>Teacher's Email</th>
+                <th>Status</th> <!-- Status of the lecture -->
+                <th>Actions</th> <!-- Confirm/Cancel buttons -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for lecture in lectures %}
+            <tr>
+                <td>{{ lecture.subject_name }}</td>
+                <td>{{ lecture.lecture_time }}</td>
+                <td>{{ lecture.teacher_name }}</td>
+                <td>{{ lecture.teacher_email }}</td>
+                <td>{{ lecture.status }}</td> <!-- Show lecture status -->
+
+                <td>
+                    {% if lecture.status == 'Pending' %}
+                    <!-- Confirm Button -->
+                    <a href="{{ url_for('confirm_lecture', lecture_id=lecture.id, lecture_date=selected_date) }}"
+                        class="btn btn-success btn-sm">
+                        Confirm
+                    </a>
+
+                    <!-- Cancel Button -->
+                    <a href="{{ url_for('cancel_lecture', lecture_id=lecture.id, lecture_date=selected_date) }}"
+                        class="btn btn-danger btn-sm">
+                        Cancel
+                    </a>
+                    {% else %}
+                    <!-- If already confirmed or canceled, disable buttons -->
+                    <span class="text-muted">No further actions</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <!-- Message if no lectures are found for the date -->
+    <p>No lectures found for this date.</p>
+    {% endif %}
+
+    <!-- Clear timetable button -->
+    <form action="{{ url_for('clear_timetable', selected_date=selected_date) }}" method="POST" class="mt-3">
+        <button type="submit" class="btn btn-danger"
+            onclick="return confirm('Are you sure you want to clear the timetable for this date?');">
+            Clear Timetable
+        </button>
+    </form>
+</div>
+{% endblock %}
