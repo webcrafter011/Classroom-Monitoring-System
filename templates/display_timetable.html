@@ -10,54 +10,56 @@ Timetable for {{ selected_date }}
 
     <!-- Check if there are any lectures -->
     {% if lectures %}
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Subject Name</th>
-                <th>Lecture Time</th>
-                <th>Teacher's Name</th>
-                <th>Teacher's Email</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for lecture in lectures %}
-            <tr>
-                <td>{{ lecture.subject_name }}</td>
-                <td>{{ lecture.lecture_time }}</td>
-                <td>{{ lecture.teacher_name }}</td>
-                <td>{{ lecture.teacher_email }}</td>
-                <td>
-                    {% if lecture.status is not none %}
-                    {{ lecture.status }}
-                    {% else %}
-                    Pending
-                    {% endif %}
-                </td>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Subject Name</th>
+                    <th>Lecture Time</th>
+                    <th>Teacher's Name</th>
+                    <th>Teacher's Email</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lecture in lectures %}
+                <tr>
+                    <td>{{ lecture.subject_name }}</td>
+                    <td>{{ lecture.lecture_time }}</td>
+                    <td>{{ lecture.teacher_name }}</td>
+                    <td>{{ lecture.teacher_email }}</td>
+                    <td>
+                        {% if lecture.status is not none %}
+                        {{ lecture.status }}
+                        {% else %}
+                        Pending
+                        {% endif %}
+                    </td>
 
-                <td>
-                    {% if lecture.status == 'Pending' %}
-                    <a href="{{ url_for('confirm_lecture', lecture_id=lecture.id, lecture_date=selected_date) }}"
-                        class="btn btn-success btn-sm">Confirm</a>
-                    <a href="{{ url_for('cancel_lecture', lecture_id=lecture.id, lecture_date=selected_date) }}"
-                        class="btn btn-danger btn-sm">Cancel</a>
-                    {% else %}
-                    <span class="text-muted">No further actions</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    <td>
+                        {% if lecture.status == 'Pending' %}
+                        <a href="{{ url_for('confirm_lecture', lecture_id=lecture.id, lecture_date=selected_date) }}"
+                            class="btn btn-success btn-sm">Confirm</a>
+                        <a href="{{ url_for('cancel_lecture', lecture_id=lecture.id, lecture_date=selected_date) }}"
+                            class="btn btn-danger btn-sm">Cancel</a>
+                        {% else %}
+                        <span class="text-muted">No further actions</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
     <p class="alert alert-warning">No lectures found for this date.</p>
     {% endif %}
 
-    <form action="/clear_timetable" method="POST">
-        <input type="hidden" name="selected_date" value="{{ current_date }}">
-        <button type="submit" class="btn btn-danger">GO Back</button>
+    <form action="/clear_timetable" method="post" style="display: inline;">
+        <button type="submit" class="btn btn-danger">Clear Timetable</button>
     </form>
+
 
 </div>
 {% endblock %}

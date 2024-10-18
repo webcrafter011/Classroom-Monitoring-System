@@ -8,8 +8,10 @@ from helper import apology
 from functools import wraps
 from flask_mail import Mail, Message
 from apscheduler.schedulers.background import BackgroundScheduler
+from flask_ngrok import run_with_ngrok  # Import Ngrok
 
 app = Flask(__name__)
+run_with_ngrok(app)  # Enable ngrok for Flask app
 
 # Configure email settings
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
@@ -60,7 +62,6 @@ def login_required(f):
     return decorated_function
 
 
-# Function to send email
 # Function to send email
 def send_email(teacher_email, teacher_name, subject_name, lecture_time):
     with app.app_context():  # Ensures this is within the app context
@@ -210,11 +211,7 @@ def display_timetable():
 @app.route("/clear_timetable", methods=["POST"])
 @login_required
 def clear_timetable():
-    selected_date = request.form.get("selected_date")
-
-    # Delete all lectures for the selected date
-    db.execute("DELETE FROM timetable WHERE lecture_date = ?", selected_date)
-
+    db.execute("DELETE FROM timetable")
     flash("Timetable cleared successfully!")
     return redirect("/timetable")
 
@@ -226,4 +223,5 @@ def logout():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    run_with_ngrok(app)  # Starts Ngrok when the app runs
+    app.run()
