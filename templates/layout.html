@@ -43,6 +43,7 @@
                 {% if session["user_id"] %}
                 <ul class="navbar-nav me-auto mt-2">
                     <li class="nav-item"><a class="nav-link" href="/timetable">Timetable</a></li>
+                    <li class="nav-item"><a class="nav-link"></li>
                 </ul>
                 <ul class="navbar-nav ms-auto mt-2">
                     <li class="nav-item"><a class="nav-link" href="/logout">Log Out</a></li>
@@ -59,7 +60,6 @@
     <main class="container">
         {% block main %}
         {% if session["user_id"] %}
-        <!-- <button><a href="/test_email">send testing email</a></button> -->
         <div class="container mt-5">
             <div class="row justify-content-center">
                 <div class="col-md-3">
@@ -75,7 +75,7 @@
                     </a>
                 </div>
                 <div class="col-md-3">
-                    <a href="/lectureStatus" class="text-decoration-none">
+                    <a href="/timetable" class="text-decoration-none">
                         <div class="card mb-4">
                             <img height="300px" src="/static/images/cardImages/second.png" class="card-img-top"
                                 alt="...">
@@ -90,7 +90,6 @@
         </div>
 
         {% else %}
-        <!-- Login requirement message -->
         <div class="card text-center mb-4">
             <div class="card-header">
                 Classroom Monitoring System
