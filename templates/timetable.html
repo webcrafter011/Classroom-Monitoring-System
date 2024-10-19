@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block title %}
-: Edit Timetable
+Edit Timetable
 {% endblock %}
 
 {% block main %}
@@ -32,6 +32,11 @@
                             <label for="teacherEmail" class="form-label">Teacher's Email</label>
                             <input type="email" class="form-control" id="teacherEmail" name="teacher_email" required>
                         </div>
+                        <div class="mb-3">
+                            <label for="lectureDate" class="form-label">Lecture Date</label>
+                            <input type="date" class="form-control" id="lectureDate" name="lecture_date"
+                                value="{{ current_date }}" required>
+                        </div>
                         <button type="submit" class="btn btn-primary">Save Timetable</button>
                     </form>
                 </div>
@@ -48,13 +53,23 @@
                     <form action="/display_timetable" method="GET">
                         <div class="mb-3">
                             <label for="selectedDate" class="form-label">Select Date</label>
-                            <input type="date" class="form-control" id="selectedDate" name="date" required>
+                            <input type="date" class="form-control" id="selectedDate" name="date"
+                                value="{{ current_date }}" required>
                         </div>
                         <button type="submit" class="btn btn-primary">Show Timetable</button>
                     </form>
                 </div>
             </div>
         </div>
+
+        <!-- Clear Timetable Button if more than 4 lectures are scheduled -->
+        {% if show_display_button %}
+        <div class="col-12 mt-4">
+            <form action="/clear_timetable" method="POST">
+                <button type="submit" class="btn btn-danger">Clear Timetable</button>
+            </form>
+        </div>
+        {% endif %}
     </div>
 </div>
 

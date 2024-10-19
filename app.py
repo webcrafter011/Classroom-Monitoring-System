@@ -21,6 +21,11 @@ app.config["MAIL_PASSWORD"] = "fgjb vwgt ibfy iryv"  # Use your App Password
 app.config["MAIL_USE_TLS"] = False
 app.config["MAIL_USE_SSL"] = True
 
+# Configure the current URL of your app to send emails and trigger responses
+app.config["BASE_URL"] = (
+    "https://e0dd-103-201-136-14.ngrok-free.app"  # Replace with your actual base URL
+)
+
 mail = Mail(app)
 
 # Initialize APScheduler
@@ -35,7 +40,7 @@ Session(app)
 # Database connection
 db = SQL("sqlite:///classroom.db")
 
-# Create the timetable table if it doesn't exist
+# Create the timetable table if it doesn't exist, including lecture_status
 db.execute(
     """
     CREATE TABLE IF NOT EXISTS timetable (
@@ -45,6 +50,7 @@ db.execute(
         teacher_name TEXT NOT NULL,
         teacher_email TEXT NOT NULL,
         lecture_date DATE NOT NULL,
+        lecture_status TEXT DEFAULT 'Pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """
@@ -62,9 +68,13 @@ def login_required(f):
     return decorated_function
 
 
-# Function to send email
-def send_email(teacher_email, teacher_name, subject_name, lecture_time):
+# Function to send email with confirm and cancel links
+def send_email(teacher_email, teacher_name, subject_name, lecture_time, lecture_id):
     with app.app_context():  # Ensures this is within the app context
+        # Use the base URL instead of request.url_root
+        confirm_link = f"{app.config['BASE_URL']}/confirm_lecture/{lecture_id}"
+        cancel_link = f"{app.config['BASE_URL']}/cancel_lecture/{lecture_id}"
+
         msg = Message(
             "Lecture Status Confirmation",
             sender=app.config["MAIL_USERNAME"],
@@ -73,9 +83,12 @@ def send_email(teacher_email, teacher_name, subject_name, lecture_time):
         msg.body = f"""
         Hello {teacher_name},
 
-        This is a reminder that you have a lecture for the subject '{subject_name}' scheduled at {lecture_time}.
+        You have a lecture for the subject '{subject_name}' scheduled at {lecture_time}.
         
-        Could you please confirm whether the lecture will take place or if it will be canceled?
+        Could you please confirm if the lecture will take place or cancel it using the following links?
+
+        Confirm the lecture: {confirm_link}
+        Cancel the lecture: {cancel_link}
 
         Kindly respond at your earliest convenience.
 
@@ -88,11 +101,12 @@ def send_email(teacher_email, teacher_name, subject_name, lecture_time):
 # Function to send emails to all teachers at their respective times
 def send_emails_for_day(selected_date):
     lectures = db.execute(
-        "SELECT teacher_email, teacher_name, subject_name, lecture_time FROM timetable WHERE lecture_date = ?",
+        "SELECT id, teacher_email, teacher_name, subject_name, lecture_time FROM timetable WHERE lecture_date = ?",
         selected_date,
     )
 
     for lecture in lectures:
+        lecture_id = lecture["id"]
         teacher_email = lecture["teacher_email"]
         teacher_name = lecture["teacher_name"]
         subject_name = lecture["subject_name"]
@@ -108,11 +122,16 @@ def send_emails_for_day(selected_date):
         if lecture_datetime < now:
             lecture_datetime += timedelta(days=1)
 
-        # Schedule email sending at lecture time
+        # Schedule email sending at lecture time using a normal function instead of a lambda
         scheduler.add_job(
-            func=lambda: send_email(
-                teacher_email, teacher_name, subject_name, lecture_time
-            ),
+            func=send_email,  # Directly use send_email function
+            args=(
+                teacher_email,
+                teacher_name,
+                subject_name,
+                lecture_time,
+                lecture_id,
+            ),  # Pass arguments
             trigger="date",
             run_date=lecture_datetime,
         )
@@ -197,7 +216,7 @@ def save_timetable():
 def display_timetable():
     selected_date = request.args.get("date")
     lectures = db.execute(
-        "SELECT subject_name, lecture_time, teacher_name, teacher_email FROM timetable WHERE lecture_date = ?",
+        "SELECT id, subject_name, lecture_time, teacher_name, teacher_email, lecture_status FROM timetable WHERE lecture_date = ?",
         selected_date,
     )
     return render_template(
@@ -213,6 +232,26 @@ def display_timetable():
 def clear_timetable():
     db.execute("DELETE FROM timetable")
     flash("Timetable cleared successfully!")
+    return redirect("/timetable")
+
+
+@app.route("/confirm_lecture/<int:lecture_id>")
+def confirm_lecture(lecture_id):
+    # Update the lecture status to 'Confirmed'
+    db.execute(
+        "UPDATE timetable SET lecture_status = 'Confirmed' WHERE id = ?", lecture_id
+    )
+    flash("Lecture confirmed successfully!")
+    return redirect("/timetable")
+
+
+@app.route("/cancel_lecture/<int:lecture_id>")
+def cancel_lecture(lecture_id):
+    # Update the lecture status to 'Canceled'
+    db.execute(
+        "UPDATE timetable SET lecture_status = 'Canceled' WHERE id = ?", lecture_id
+    )
+    flash("Lecture canceled successfully!")
     return redirect("/timetable")
 
 
