@@ -16,14 +16,14 @@ run_with_ngrok(app)  # Enable ngrok for Flask app
 # Configure email settings
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 465
-app.config["MAIL_USERNAME"] = "youremail@email.com"  # Replace with your email
-app.config["MAIL_PASSWORD"] = "your_password"  # Use your App Password
+app.config["MAIL_USERNAME"] = "yourgmail@gmail.com"  # Replace with your email
+app.config["MAIL_PASSWORD"] = "your-password"  # Use your App Password
 app.config["MAIL_USE_TLS"] = False
 app.config["MAIL_USE_SSL"] = True
 
 # Configure the current URL of your app to send emails and trigger responses
 app.config["BASE_URL"] = (
-    "https://e0dd-103-201-136-14.ngrok-free.app"  # Replace with your actual base URL
+    "https://your-ngrok-app-link.com"  # Replace with your actual base URL
 )
 
 mail = Mail(app)
@@ -242,7 +242,7 @@ def confirm_lecture(lecture_id):
         "UPDATE timetable SET lecture_status = 'Confirmed' WHERE id = ?", lecture_id
     )
     flash("Lecture confirmed successfully!")
-    return redirect("/timetable")
+    return render_template("status_confirmed.html", css_file="css/layoutStyles.css")
 
 
 @app.route("/cancel_lecture/<int:lecture_id>")
@@ -252,7 +252,7 @@ def cancel_lecture(lecture_id):
         "UPDATE timetable SET lecture_status = 'Canceled' WHERE id = ?", lecture_id
     )
     flash("Lecture canceled successfully!")
-    return redirect("/timetable")
+    return render_template("status_canceled.html", css_file="css/layoutStyles.css")
 
 
 @app.route("/logout")

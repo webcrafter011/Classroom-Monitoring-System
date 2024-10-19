@@ -8,6 +8,13 @@ Timetable for {{ selected_date }}
 <div class="container mt-4">
     <h3>Timetable for {{ selected_date }}</h3>
 
+    <!-- JavaScript to refresh the page every 10 seconds -->
+    <script>
+        setInterval(function () {
+            window.location.reload();
+        }, 10000);  // Refresh the page every 10 seconds
+    </script>
+
     <!-- Check if there are any lectures -->
     {% if lectures %}
     <div class="table-responsive">
