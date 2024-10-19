@@ -16,8 +16,8 @@ run_with_ngrok(app)  # Enable ngrok for Flask app
 # Configure email settings
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 465
-app.config["MAIL_USERNAME"] = "manujchaudhari456@gmail.com"  # Replace with your email
-app.config["MAIL_PASSWORD"] = "fgjb vwgt ibfy iryv"  # Use your App Password
+app.config["MAIL_USERNAME"] = "youremail@email.com"  # Replace with your email
+app.config["MAIL_PASSWORD"] = "your_password"  # Use your App Password
 app.config["MAIL_USE_TLS"] = False
 app.config["MAIL_USE_SSL"] = True
 
