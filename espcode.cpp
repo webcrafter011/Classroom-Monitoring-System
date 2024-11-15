@@ -1,98 +1,139 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <DMD32.h>  // Correct header file for DMD library
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Ticker.h>
 
 // Wi-Fi credentials
 const char *ssid = "sample12";
 const char *password = "sample12";
 
 // API endpoint to fetch lecture status
-const char *serverUrl = "http://f0a2-2401-4900-7971-9c3c-7d8a-29b-169a-b882.ngrok-free.app/api/timetable_status";
+const char *serverUrl = "https://21c5-117-217-104-210.ngrok-free.app/api/timetable_status";
 
-// Time interval for polling (in milliseconds)
-const unsigned long pollingInterval = 10000; // 10 seconds
-unsigned long previousMillis = 0;
+// OLED display configuration
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-// Define DMD object for 32x16 matrix display (1 panel wide, 1 panel high)
-DMD matrix(1, 1);  // 1 panel wide, 1 panel high
+// Create a Ticker object for scrolling
+Ticker scrollTicker;
 
-// Function to fetch the latest lecture status from the server and update the display
-void fetchAndUpdateDisplay()
-{
-    if (WiFi.status() == WL_CONNECTED)
-    {
+String displayMessage = ""; // Message to scroll
+int scrollPos = 0;          // Horizontal position for scrolling
+
+// Function to fetch the latest lecture status from the server
+void fetchLectureStatus() {
+    if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
         http.begin(serverUrl);
 
         int httpResponseCode = http.GET();
 
-        if (httpResponseCode == 200)
-        {
+        if (httpResponseCode == 200) {
             String response = http.getString();
-            Serial.println(response); // Debugging output
+            Serial.println("Server Response: " + response); // Debugging output
 
             // Parse JSON response
             DynamicJsonDocument doc(1024);
             DeserializationError error = deserializeJson(doc, response);
-            if (error)
-            {
+            if (error) {
                 Serial.print("JSON parsing failed: ");
                 Serial.println(error.c_str());
                 return;
             }
-
-            matrix.clearScreen(LOW); // Clear the display before showing new data
 
             // Display only the latest lecture's status (first item in the JSON array)
             JsonObject latestLecture = doc[0];
             const char *subject_name = latestLecture["subject_name"];
             const char *lecture_status = latestLecture["lecture_status"];
 
-            // Create a concise display message
-            String displayMessage = String(subject_name) + ": " + lecture_status;
+            // Update display message
+            displayMessage = String(subject_name) + ": " + lecture_status;
 
-            // Display text on the matrix
-            matrix.drawString(0, 0, displayMessage.c_str(), displayMessage.length(), GRAPHICS_NORMAL);
-            delay(3000); // Display the message for 3 seconds
-        }
-        else
-        {
+            // Print the message to the Serial Monitor
+            Serial.println("Display Message: " + displayMessage);
+
+            // Reset scrolling position
+            scrollPos = SCREEN_WIDTH; // Start the text off-screen to the right
+        } else {
             Serial.print("Error in HTTP request: ");
             Serial.println(httpResponseCode);
         }
 
         http.end();
-    }
-    else
-    {
+    } else {
         Serial.println("WiFi not connected");
     }
 }
 
-void setup()
-{
+// Function to scroll the text message
+void scrollText() {
+    display.clearDisplay(); // Clear the display
+
+    // Draw the message at the current scroll position
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(scrollPos, 28); // Vertical center
+    display.print(displayMessage);
+
+    // Move text to the left by 1 pixel
+    scrollPos--;
+
+    // Reset position to create continuous scrolling if the text has fully scrolled off-screen
+    int textWidth = displayMessage.length() * 6; // Approximate width of each character (6 pixels)
+    if (scrollPos < -textWidth) {
+        scrollPos = SCREEN_WIDTH; // Reset to the start position on the right
+    }
+
+    display.display(); // Update the OLED display
+}
+
+// Setup function
+void setup() {
     Serial.begin(115200);
 
+    // Initialize the OLED display
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+        Serial.println("SSD1306 allocation failed");
+        for (;;)
+            ; // Infinite loop if initialization fails
+    }
+
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.println("Connecting...");
+    display.display();
+
+    // Connect to Wi-Fi
     WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED)
-    {
+    while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
         Serial.println("Connecting to WiFi...");
     }
     Serial.println("Connected to WiFi");
 
-    matrix.clearScreen(LOW);  // Clear the display on startup
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.println("WiFi Connected!");
+    display.display();
+
+    // Fetch the initial lecture status and start scrolling
+    fetchLectureStatus();
+
+    // Set up a Ticker to fetch new data every 60 seconds
+    Ticker fetchTicker;
+    fetchTicker.attach(60, fetchLectureStatus);
+
+    // Set up a Ticker to scroll text every 100ms for smooth scrolling
+    scrollTicker.attach(0.1, scrollText);
 }
 
-void loop()
-{    
-    unsigned long currentMillis = millis();
-
-    if (currentMillis - previousMillis >= pollingInterval)
-    {
-        previousMillis = currentMillis;
-        fetchAndUpdateDisplay();
-    }
-    delay(500);
+// Loop function
+void loop() {
+    // No need for additional logic here, as Ticker handles the timing
+    delay(500); // Small delay to avoid CPU overuse
 }
