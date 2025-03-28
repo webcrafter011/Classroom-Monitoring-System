@@ -1,7 +1,7 @@
 import os
 from cs50 import SQL
 from datetime import date, datetime, timedelta
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, flash, redirect, render_template, request, session, jsonify
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from helper import apology
@@ -16,14 +16,14 @@ run_with_ngrok(app)  # Enable ngrok for Flask app
 # Configure email settings
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 465
-app.config["MAIL_USERNAME"] = "yourgmail@gmail.com"  # Replace with your email
-app.config["MAIL_PASSWORD"] = "your-password"  # Use your App Password
+app.config["MAIL_USERNAME"] = "youremail@mail.com"  # Replace with your email
+app.config["MAIL_PASSWORD"] = "pass pass pass pass"  # Use your App Password
 app.config["MAIL_USE_TLS"] = False
 app.config["MAIL_USE_SSL"] = True
 
 # Configure the current URL of your app to send emails and trigger responses
 app.config["BASE_URL"] = (
-    "https://your-ngrok-app-link.com"  # Replace with your actual base URL
+    "https://8db6-117-217-104-211.ngrok-free.app"  # Replace with your actual base URL
 )
 
 mail = Mail(app)
@@ -95,7 +95,7 @@ def send_email(teacher_email, teacher_name, subject_name, lecture_time, lecture_
         Thank you!
         """
         mail.send(msg)
-        print(f"Email sent to {teacher_email} at {datetime.now()}")
+        print(f"Email sent to {teacher_email} at {datetime.now()}") 
 
 
 # Function to send emails to all teachers at their respective times
@@ -255,12 +255,45 @@ def cancel_lecture(lecture_id):
     return render_template("status_canceled.html", css_file="css/layoutStyles.css")
 
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/")
+@app.route("/get_latest_lecture_status")
+def get_latest_lecture_status():
+    # Get today's date
+    current_date = date.today().strftime("%Y-%m-%d")
+
+    # Fetch the latest lecture status for today
+    latest_lecture = db.execute(
+        "SELECT subject_name, lecture_time, teacher_name, lecture_status "
+        "FROM timetable WHERE lecture_date = ? ORDER BY lecture_time DESC LIMIT 1", 
+        current_date
+    )
+
+    # If there's a lecture, return its status; otherwise, return a default message
+    if latest_lecture:
+        latest_lecture = latest_lecture[0]  # Get the first result
+        return jsonify({
+            'status': latest_lecture['lecture_status'],
+            'subject': latest_lecture['subject_name'],
+            'time': latest_lecture['lecture_time']
+        })
+    else:
+        return jsonify({
+            'status': 'No lectures scheduled',
+            'subject': '',
+            'time': ''
+        })
+
+
+@app.route("/api/timetable_status")
+def api_timetable_status():
+    current_date = date.today().strftime("%Y-%m-%d")
+    status = db.execute(
+        "SELECT subject_name, lecture_status FROM timetable WHERE lecture_date = ?",
+        current_date,
+    )
+    return jsonify(status)
 
 
 if __name__ == "__main__":
-    run_with_ngrok(app)  # Starts Ngrok when the app runs
+    app.config['DEBUG'] = True  # Enable debug mode
     app.run()
+
